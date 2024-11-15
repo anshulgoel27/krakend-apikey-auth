@@ -6,9 +6,25 @@ HTTP Basic authentication middleware for the [KrakenD-CE](https://github.com/kra
 git clone https://github.com/krakend/krakend-ce.git
 cd krakend-ce
 
+#Modify executor.go
+#Add to imports: 
+# apikeyauth "github.com/anshulgoel27/krakend-apikey-auth"
+# apikeyauthgin "github.com/anshulgoel27/krakend-apikey-auth/gin"
+#Add to NewCmdExecutor (before "handlerF := e.HandlerFactory.NewHandlerFactory"):
+# apiKeyAuthManager, err := apikeyauthgin.NewApiKeyAuthenticator(cfg, logger)
+# if err != nil {
+#	logger.Warning("[SERVICE: apikey-auth]", err.Error())
+# }
+#Update signature of function "NewHandlerFactory" to accept apiKeyAuthManager as parameter
 #Modify handler_factory.go
-#Add to imports: basicauth "github.com/anshulgoel27/krakend-apikey-auth/gin"
-#Add to NewHandlerFactory (before "return handlerFactory"): handlerFactory = basicauth.New(handlerFactory, logger)
+#Add to imports: 
+# apikeyauth "github.com/anshulgoel27/krakend-apikey-auth"
+# apikeyauthgin "github.com/anshulgoel27/krakend-apikey-auth/gin"
+#Update function NewHandlerFactory to accept apiKeyAuthManager as parameter
+#Add to NewHandlerFactory (before "return handlerFactory"):
+# if apiKeyAuthManager != nil {
+#	handlerFactory = apikeyauthgin.NewHandlerFactory(apiKeyAuthManager, handlerFactory, logger)
+# }
 
 go get github.com/anshulgoel27/krakend-apikey-auth/gin
 
@@ -16,7 +32,7 @@ make build
 
 ./krakend run -c ./krakend.json -d
 
-curl -H'Authorization: Bearer 58427514-be32-0b52-b7c6-d01fada30497' http://localhost:8080/adminonly/test
+curl -i -H'Authorization: Bearer 58427514-be32-0b52-b7c6-d01fada30497' http://localhost:8080/adminonly/test
 ```
 
 ## Example krakend.json
