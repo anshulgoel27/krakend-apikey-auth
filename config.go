@@ -8,7 +8,7 @@ import (
 )
 
 // Namespace is the key to look for extra configuration details
-const Namespace = "github.com/anshulgoel27/krakend-apikey-auth"
+const Namespace = "github_com/anshulgoel27/krakend-apikey-auth"
 
 type ApiKey struct {
 	Key             string                 `json:"key"`
