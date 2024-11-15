@@ -16,7 +16,7 @@ make build
 
 ./krakend run -c ./krakend.json -d
 
-curl --user foo:bar http://localhost:8080/private/test
+curl -H'Authorization: Bearer 58427514-be32-0b52-b7c6-d01fada30497' http://localhost:8080/adminonly/test
 ```
 
 ## Example krakend.json
