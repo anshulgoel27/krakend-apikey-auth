@@ -36,7 +36,7 @@ curl -H'Authorization: Bearer 58427514-be32-0b52-b7c6-d01fada30497' http://local
                     "@plain": "4d2c61e1-34c4-e96c-9456-15bd983c5019",
                     "key": "a6a6d530a77a28fad2359223759d2d2231b516a31de2c09ad046726610f0fd87",
                     "roles": [
-                        "user",
+                        "user"
                     ],
                     "@description": "ACME Inc."
                 },
