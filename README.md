@@ -27,9 +27,33 @@ curl --user foo:bar http://localhost:8080/private/test
     "port": 8080,
     "cache_ttl": 3600,
     "timeout": "3s",
+    "extra_config": {
+        "github_com/anshulgoel27/krakend-apikey-auth": {
+            "strategy": "header",
+            "identifier": "Authorization",
+            "keys": [
+                {
+                    "@plain": "4d2c61e1-34c4-e96c-9456-15bd983c5019",
+                    "key": "a6a6d530a77a28fad2359223759d2d2231b516a31de2c09ad046726610f0fd87",
+                    "roles": [
+                        "user",
+                    ],
+                    "@description": "ACME Inc."
+                },
+                {
+                    "@plain": "58427514-be32-0b52-b7c6-d01fada30497",
+                    "key": "0d85b6ef02794cbf3fef4506286aaba2d499b1f825a5452d9f3444d50b33b48c",
+                    "roles": [
+                        "admin"
+                    ],
+                    "@description": "Administrators Inc."
+                }
+            ]
+        }
+    },
     "endpoints": [
         {
-            "endpoint": "/private/{user}",
+            "endpoint": "/adminonly/{user}",
             "method": "GET",
             "headers_to_pass": [
                 "Authorization",
@@ -48,14 +72,15 @@ curl --user foo:bar http://localhost:8080/private/test
                 }
             ],
             "extra_config": {
-                "github.com/anshulgoel27/krakend-apikey-auth": {
-                    "pass": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9",
-                    "user": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+                "github_com/anshulgoel27/krakend-apikey-auth": {
+                    "roles": [
+                        "admin"
+                    ]
                 }
             }
         },
         {
-            "endpoint": "/public/{user}",
+            "endpoint": "/both/{user}",
             "method": "GET",
             "headers_to_pass": [
                 "Authorization",
@@ -72,7 +97,15 @@ curl --user foo:bar http://localhost:8080/private/test
                         "code_search_url"
                     ]
                 }
-            ]
+            ],
+            "extra_config": {
+                "github_com/anshulgoel27/krakend-apikey-auth": {
+                    "roles": [
+                        "admin",
+                        "user"
+                    ]
+                }
+            }
         }
     ]
 }

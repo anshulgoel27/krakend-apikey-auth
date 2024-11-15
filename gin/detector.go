@@ -14,41 +14,24 @@ import (
 
 const logPrefix = "[SERVICE: Gin][apikey-auth]"
 
-func Register(cfg config.ServiceConfig, l logging.Logger, engine *gin.Engine) {
+func NewApiKeyAuthenticator(cfg config.ServiceConfig, l logging.Logger) (*auth.AuthKeyLookupManager, error) {
 	detectorCfg, err := auth.ParseServiceConfig(cfg.ExtraConfig)
 	if err == auth.ErrNoConfig {
-		return
+		return nil, err
 	}
 	if err != nil {
 		l.Warning(logPrefix, err.Error())
-		return
+		return nil, err
 	}
-	d := auth.New(detectorCfg)
-	engine.Use(middleware(d, l))
+	return auth.NewAuthKeyLookupManager(detectorCfg), nil
 }
 
-func middleware(f auth.AuthFunc, l logging.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		valid, err := f(c.Request)
-		if !valid {
-			if err != nil {
-				l.Error(logPrefix, err)
-			}
-			l.Error(logPrefix, errApiKeyAuthRejected)
-			c.AbortWithStatus(http.StatusForbidden)
-			return
-		}
-
-		c.Next()
-	}
-}
-
-func New(hf krakendgin.HandlerFactory, l logging.Logger) krakendgin.HandlerFactory {
+func NewHandlerFactory(apiKeyLookupManager *auth.AuthKeyLookupManager, hf krakendgin.HandlerFactory, l logging.Logger) krakendgin.HandlerFactory {
 	return func(cfg *config.EndpointConfig, p proxy.Proxy) gin.HandlerFunc {
 		next := hf(cfg, p)
 		logPrefix := "[ENDPOINT: " + cfg.Endpoint + "][apikey-auth]"
 
-		detectorCfg, err := auth.ParseServiceConfig(cfg.ExtraConfig)
+		detectorCfg, err := auth.ParseEndpointConfig(apiKeyLookupManager, cfg.ExtraConfig)
 		if err == auth.ErrNoConfig {
 			return next
 		}
@@ -57,14 +40,14 @@ func New(hf krakendgin.HandlerFactory, l logging.Logger) krakendgin.HandlerFacto
 			return next
 		}
 
-		d := auth.New(detectorCfg)
-		return handler(d, next, l)
+		d := auth.NewApiKeyAuthenticator(detectorCfg)
+		return handler(d, apiKeyLookupManager, next, l)
 	}
 }
 
-func handler(f auth.AuthFunc, next gin.HandlerFunc, l logging.Logger) gin.HandlerFunc {
+func handler(f auth.AuthFunc, apiKeyLookupManager *auth.AuthKeyLookupManager, next gin.HandlerFunc, l logging.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		valid, err := f(c.Request)
+		valid, err := f(apiKeyLookupManager, c.Request)
 		if !valid {
 			if err != nil {
 				l.Error(logPrefix, err)
