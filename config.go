@@ -117,10 +117,11 @@ func NewAuthKeyLookupManager(config ServiceApiKeyConfig) *AuthKeyLookupManager {
 	}
 
 	manager := &AuthKeyLookupManager{
-		lookupKeyMap:      config.buildKeyLookup(),
-		lookupRoleMap:     config.buildRoleLookup(),
-		defaultIdentifier: config.Identifier,
-		defaultStrategy:   config.Strategy,
+		lookupKeyMap:        config.buildKeyLookup(),
+		lookupRoleMap:       config.buildRoleLookup(),
+		defaultIdentifier:   config.Identifier,
+		defaultStrategy:     config.Strategy,
+		propagateRoleHeader: config.PropagateRole,
 	}
 	return manager
 }
