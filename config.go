@@ -20,6 +20,7 @@ const (
 // Default values
 const defaultStrategy = Header
 const defaultIdentifier = "Authorization"
+const defaultPropagateRoleHeader = "X-API-Role"
 
 // Namespace is the key to look for extra configuration details
 const Namespace = "github_com/anshulgoel27/krakend-apikey-auth"
@@ -69,7 +70,14 @@ type ServiceApiKeyConfig struct {
 	// Possible values are: "header" , "query_string"
 	// Defaults to "header"
 	Strategy ApiKeyStrategy `json:"strategy,omitempty"`
-	Keys     []ApiKey       `json:"keys"`
+	// The name of a header that will propagate to the backend containing the matching role.
+	// The backend receives no header when the string is empty, or the attribute is not declared.
+	// Otherwise, the backend receives the declared header name containing the first matching role of the user.
+	// The header value will be ANY when the endpoint does not require roles. For instance, if an API key has roles [A, B],
+	// and the endpoint demands roles [B, C], the backend will receive a header with the value B.
+	// Default X-API-Role
+	PropagateRole string   `json:"propagate_role,omitempty"`
+	Keys          []ApiKey `json:"keys"`
 }
 
 // Build a lookup map for ApiKey
@@ -94,10 +102,11 @@ func (config *ServiceApiKeyConfig) buildRoleLookup() map[string][]ApiKey {
 
 // AuthKeyLookupManager class with added role-based lookup
 type AuthKeyLookupManager struct {
-	lookupKeyMap      map[string]ApiKey
-	lookupRoleMap     map[string][]ApiKey
-	defaultIdentifier string
-	defaultStrategy   ApiKeyStrategy
+	lookupKeyMap        map[string]ApiKey
+	lookupRoleMap       map[string][]ApiKey
+	defaultIdentifier   string
+	defaultStrategy     ApiKeyStrategy
+	propagateRoleHeader string
 }
 
 // Constructor for LookupManager
@@ -118,6 +127,10 @@ func NewAuthKeyLookupManager(config ServiceApiKeyConfig) *AuthKeyLookupManager {
 
 func (manager *AuthKeyLookupManager) DefaultIdentifier() string {
 	return manager.defaultIdentifier
+}
+
+func (manager *AuthKeyLookupManager) PropagateRoleHeader() string {
+	return manager.propagateRoleHeader
 }
 
 func (manager *AuthKeyLookupManager) DefautlStrategy() ApiKeyStrategy {
@@ -209,6 +222,9 @@ func ParseServiceConfig(cfg config.ExtraConfig) (ServiceApiKeyConfig, error) {
 	}
 	if res.Strategy == "" {
 		res.Strategy = defaultStrategy
+	}
+	if res.PropagateRole == "" {
+		res.PropagateRole = defaultPropagateRoleHeader
 	}
 
 	return res, err

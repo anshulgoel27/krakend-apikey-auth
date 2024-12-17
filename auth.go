@@ -67,9 +67,13 @@ func (d *EndpointApiKeyConfig) Authenticate(apiKeyLookupManager *AuthKeyLookupMa
 	}
 
 	// Validate the API key and its roles
-	valid, _, err := apiKeyLookupManager.ValidateKeyAndRoles(sha256ToHex(apiKey), d.Roles)
+	valid, propagate_role, err := apiKeyLookupManager.ValidateKeyAndRoles(sha256ToHex(apiKey), d.Roles)
 	if err != nil {
 		return false, fmt.Errorf("authentication failed for API key '%s': %v", apiKey, err)
+	}
+
+	if apiKeyLookupManager.PropagateRoleHeader() != "" {
+		r.Header.Set(apiKeyLookupManager.PropagateRoleHeader(), propagate_role)
 	}
 
 	// Return the result of validation
