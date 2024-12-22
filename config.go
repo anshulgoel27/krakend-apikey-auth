@@ -35,6 +35,7 @@ type ApiKey struct {
 	CreationDate    time.Time              `json:"creation_date"`   // Creation date for API key
 	UserId          string                 `json:"user_id"`
 	UserEmail       string                 `json:"user_email"`
+	Enabled         bool                   `json:"enabled"`
 	RoleMap         map[string]struct{}    `json:"-"` // RoleMap for fast lookup
 	AdditionalProps map[string]interface{} `json:"-"`
 }
@@ -155,6 +156,11 @@ func (manager *AuthKeyLookupManager) ValidateKeyAndRole(key string, role string)
 		return false, errors.New("API key not found")
 	}
 
+	// Check if the API key is enabled or not
+	if !apiKey.Enabled {
+		return false, fmt.Errorf("API key '%s' is disabled", key)
+	}
+
 	// Check if the API key is expired
 	if apiKey.isExpired() {
 		return false, fmt.Errorf("API key '%s' has expired", key)
@@ -175,6 +181,11 @@ func (manager *AuthKeyLookupManager) ValidateKeyAndRoles(key string, roles []str
 	apiKey, found := manager.lookupKey(key)
 	if !found {
 		return false, "", errors.New("API key not found")
+	}
+
+	// Check if the API key is enabled or not
+	if !apiKey.Enabled {
+		return false, "", fmt.Errorf("API key '%s' is disabled", key)
 	}
 
 	// Check if the API key is expired
@@ -243,10 +254,13 @@ func ParseServiceConfig(cfg config.ExtraConfig) (ServiceApiKeyConfig, error) {
 				CreationDate: time.Now(),
 				UserId:       "admin",
 				UserEmail:    "admin",
+				Enabled:      true,
 			})
 		}
 	}
 
+	// TODO: fetch all the keys from service API and build the cache
+	// TODO: create a nats consumer to listen to events for create/delete key build the cache
 	return res, err
 }
 
