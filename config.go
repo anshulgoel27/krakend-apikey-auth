@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/luraproject/lura/v2/config"
@@ -30,7 +32,10 @@ type ApiKey struct {
 	Key             string                 `json:"key"`
 	Roles           []string               `json:"roles"`           // Roles as a slice
 	ExpirationDate  time.Time              `json:"expiration_date"` // Expiration date for API key
-	RoleMap         map[string]struct{}    `json:"-"`               // RoleMap for fast lookup
+	CreationDate    time.Time              `json:"creation_date"`   // Creation date for API key
+	UserId          string                 `json:"user_id"`
+	UserEmail       string                 `json:"user_email"`
+	RoleMap         map[string]struct{}    `json:"-"` // RoleMap for fast lookup
 	AdditionalProps map[string]interface{} `json:"-"`
 }
 
@@ -78,35 +83,27 @@ type ServiceApiKeyConfig struct {
 	// Default X-API-Role
 	PropagateRole string   `json:"propagate_role,omitempty"`
 	Keys          []ApiKey `json:"keys"`
+	AdminKeyEnv   string   `json:"admin_key_env"`
 }
 
 // Build a lookup map for ApiKey
-func (config *ServiceApiKeyConfig) buildKeyLookup() map[string]ApiKey {
-	lookup := make(map[string]ApiKey)
-	for _, key := range config.Keys {
-		lookup[key.Key] = key
-	}
-	return lookup
-}
+// Thread-safe map creation
+func (manager *AuthKeyLookupManager) buildKeyLookup(keys []ApiKey) {
+	manager.mu.Lock()
+	defer manager.mu.Unlock()
 
-// Build a lookup map for roles
-func (config *ServiceApiKeyConfig) buildRoleLookup() map[string][]ApiKey {
-	lookup := make(map[string][]ApiKey)
-	for _, key := range config.Keys {
-		for _, role := range key.Roles {
-			lookup[role] = append(lookup[role], key)
-		}
+	for _, key := range keys {
+		manager.lookupKeyMap[key.Key] = key
 	}
-	return lookup
 }
 
 // AuthKeyLookupManager class with added role-based lookup
 type AuthKeyLookupManager struct {
 	lookupKeyMap        map[string]ApiKey
-	lookupRoleMap       map[string][]ApiKey
 	defaultIdentifier   string
 	defaultStrategy     ApiKeyStrategy
 	propagateRoleHeader string
+	mu                  sync.RWMutex // Mutex for thread-safe access
 }
 
 // Constructor for LookupManager
@@ -117,12 +114,15 @@ func NewAuthKeyLookupManager(config ServiceApiKeyConfig) *AuthKeyLookupManager {
 	}
 
 	manager := &AuthKeyLookupManager{
-		lookupKeyMap:        config.buildKeyLookup(),
-		lookupRoleMap:       config.buildRoleLookup(),
+		lookupKeyMap:        make(map[string]ApiKey),
 		defaultIdentifier:   config.Identifier,
 		defaultStrategy:     config.Strategy,
 		propagateRoleHeader: config.PropagateRole,
 	}
+
+	// Build the lookup map in a thread-safe manner
+	manager.buildKeyLookup(config.Keys)
+
 	return manager
 }
 
@@ -140,6 +140,9 @@ func (manager *AuthKeyLookupManager) DefautlStrategy() ApiKeyStrategy {
 
 // Lookup function to find an ApiKey by key
 func (manager *AuthKeyLookupManager) lookupKey(key string) (ApiKey, bool) {
+	manager.mu.RLock()
+	defer manager.mu.RUnlock()
+
 	apiKey, found := manager.lookupKeyMap[key]
 	return apiKey, found
 }
@@ -226,6 +229,22 @@ func ParseServiceConfig(cfg config.ExtraConfig) (ServiceApiKeyConfig, error) {
 	}
 	if res.PropagateRole == "" {
 		res.PropagateRole = defaultPropagateRoleHeader
+	}
+
+	if res.AdminKeyEnv != "" {
+		admin_key := os.Getenv(res.AdminKeyEnv)
+		if admin_key != "" {
+			hased_admin_key := sha256ToHex(admin_key)
+			res.Keys = append(res.Keys, ApiKey{
+				Key: hased_admin_key,
+				Roles: []string{
+					"admin",
+				},
+				CreationDate: time.Now(),
+				UserId:       "admin",
+				UserEmail:    "admin",
+			})
+		}
 	}
 
 	return res, err
