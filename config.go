@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/luraproject/lura/v2/config"
+	"github.com/luraproject/lura/v2/logging"
 )
 
 // Define enum for Strategy
@@ -219,7 +220,7 @@ type EndpointApiKeyConfig struct {
 
 var ErrNoConfig = errors.New("no config defined for the module")
 
-func ParseServiceConfig(cfg config.ExtraConfig) (ServiceApiKeyConfig, error) {
+func ParseServiceConfig(cfg config.ExtraConfig, l logging.Logger) (ServiceApiKeyConfig, error) {
 	res := ServiceApiKeyConfig{}
 	e, ok := cfg[Namespace]
 	if !ok {
@@ -260,7 +261,7 @@ func ParseServiceConfig(cfg config.ExtraConfig) (ServiceApiKeyConfig, error) {
 	}
 
 	// TODO: fetch all the keys from service API and build the cache
-	// TODO: create a nats consumer to listen to events for create/delete key build the cache
+	go startConsumer(l)
 	return res, err
 }
 

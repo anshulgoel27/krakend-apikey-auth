@@ -15,7 +15,7 @@ import (
 const logPrefix = "[SERVICE: Gin][apikey-auth]"
 
 func NewApiKeyAuthenticator(cfg config.ServiceConfig, l logging.Logger) (*auth.AuthKeyLookupManager, error) {
-	detectorCfg, err := auth.ParseServiceConfig(cfg.ExtraConfig)
+	detectorCfg, err := auth.ParseServiceConfig(cfg.ExtraConfig, l)
 	if err == auth.ErrNoConfig {
 		return nil, err
 	}
