@@ -10,7 +10,6 @@ import (
 )
 
 func startConsumer(ctx context.Context, l logging.Logger, logPrefix string) {
-	// TODO: create a nats consumer to listen to events for create/delete key build the cache
 	// Connect to NATS server
 	url := os.Getenv("NATS_SERVER_URL")
 	if url == "" {
@@ -41,7 +40,8 @@ func startConsumer(ctx context.Context, l logging.Logger, logPrefix string) {
 
 	// Subscribe using the GUID as the durable name
 	sub, err := js.Subscribe(topic, func(msg *nats.Msg) {
-		l.Info(logPrefix, "Received message", consumerID, string(msg.Data))
+		// TODO consume the message and update the API Key Cache
+		l.Info(logPrefix, "Received message for consumer", consumerID, string(msg.Data))
 		// Acknowledge the message
 		msg.Ack()
 	}, nats.Durable(consumerID), nats.ManualAck())
@@ -49,14 +49,11 @@ func startConsumer(ctx context.Context, l logging.Logger, logPrefix string) {
 		l.Error(logPrefix, "Error subscribing", err)
 		return
 	}
-	defer func() {
-		sub.Unsubscribe()
-		l.Info(logPrefix, "Unsubscribed consumer", consumerID)
-	}()
 
 	// Wait for context cancellation
 	<-ctx.Done()
+	sub.Unsubscribe()
+	l.Debug(logPrefix, "Unsubscribed consumer", consumerID)
 	nc.Close()
-	l.Info(logPrefix, "Closed NATS connection")
-	l.Info(logPrefix, "Consumer shutting down", consumerID)
+	l.Debug(logPrefix, "Closed NATS connection")
 }
