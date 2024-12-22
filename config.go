@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -220,7 +221,7 @@ type EndpointApiKeyConfig struct {
 
 var ErrNoConfig = errors.New("no config defined for the module")
 
-func ParseServiceConfig(cfg config.ExtraConfig, l logging.Logger) (ServiceApiKeyConfig, error) {
+func ParseServiceConfig(ctx context.Context, cfg config.ExtraConfig, l logging.Logger, logPrefix string) (ServiceApiKeyConfig, error) {
 	res := ServiceApiKeyConfig{}
 	e, ok := cfg[Namespace]
 	if !ok {
@@ -261,7 +262,7 @@ func ParseServiceConfig(cfg config.ExtraConfig, l logging.Logger) (ServiceApiKey
 	}
 
 	// TODO: fetch all the keys from service API and build the cache
-	go startConsumer(l)
+	go startConsumer(ctx, l, logPrefix)
 	return res, err
 }
 

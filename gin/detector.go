@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -14,8 +15,8 @@ import (
 
 const logPrefix = "[SERVICE: Gin][apikey-auth]"
 
-func NewApiKeyAuthenticator(cfg config.ServiceConfig, l logging.Logger) (*auth.AuthKeyLookupManager, error) {
-	detectorCfg, err := auth.ParseServiceConfig(cfg.ExtraConfig, l)
+func NewApiKeyAuthenticator(ctx context.Context, cfg config.ServiceConfig, l logging.Logger) (*auth.AuthKeyLookupManager, error) {
+	detectorCfg, err := auth.ParseServiceConfig(ctx, cfg.ExtraConfig, l, logPrefix)
 	if err == auth.ErrNoConfig {
 		return nil, err
 	}
