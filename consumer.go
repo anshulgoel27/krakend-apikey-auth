@@ -36,9 +36,17 @@ type CreatedKeyData struct {
 	Plan           string    `json:"plan"`
 }
 
+type CreatedEvent struct {
+	Keys []CreatedKeyData `json:"keys"`
+}
+
 // Data structure for DELETED messages
 type DeletedKeyData struct {
 	Key string `json:"key"`
+}
+
+type DeleteEvent struct {
+	Keys []DeletedKeyData `json:"keys"`
 }
 
 // Validate the Type field
@@ -73,36 +81,39 @@ func processMessage(data []byte, logPrefix string, consumerID string, l logging.
 	// Process based on the type
 	switch keyAdminMsg.Type {
 	case Created:
-		var createdKeyData CreatedKeyData
-		err := mapToStruct(keyAdminMsg.Data, &createdKeyData)
+		var createdKeyEvent CreatedEvent
+		err := mapToStruct(keyAdminMsg.Data, &createdKeyEvent)
 		if err != nil {
 			l.Error(logPrefix, "Error parsing CREATED data:", err)
 			return false
 		}
-		l.Debug(logPrefix, "Recieved CREATED data for consumer", consumerID, createdKeyData)
-
-		ok, err := authManager.addKey(&createdKeyData)
-		if !ok {
-			if err != nil {
-				l.Debug(logPrefix, "Key CREATED failed for consumer", consumerID, createdKeyData, err.Error())
+		l.Debug(logPrefix, "Recieved CREATED data for consumer", consumerID, createdKeyEvent)
+		for _, key := range createdKeyEvent.Keys {
+			ok, err := authManager.addKey(&key)
+			if !ok {
+				if err != nil {
+					l.Debug(logPrefix, "Key CREATED failed for consumer", consumerID, createdKeyEvent, err.Error())
+				}
+			} else {
+				l.Debug(logPrefix, "Processed CREATED data for consumer", consumerID, createdKeyEvent)
 			}
-		} else {
-			l.Debug(logPrefix, "Processed CREATED data for consumer", consumerID, createdKeyData)
 		}
 	case Deleted:
-		var deletedKeyData DeletedKeyData
-		err := mapToStruct(keyAdminMsg.Data, &deletedKeyData)
+		var deletedKeyEvent DeleteEvent
+		err := mapToStruct(keyAdminMsg.Data, &deletedKeyEvent)
 		if err != nil {
 			l.Error(logPrefix, "Error parsing DELETED data:", err)
 			return false
 		}
-		l.Debug(logPrefix, "Recieved DELETED data for consumer", consumerID, deletedKeyData)
+		l.Debug(logPrefix, "Recieved DELETED data for consumer", consumerID, deletedKeyEvent)
 
-		deletedKey, ok := authManager.deleteKey(deletedKeyData.Key)
-		if !ok {
-			l.Debug(logPrefix, "Key Deletion failed for consumer", consumerID, deletedKeyData)
-		} else {
-			l.Debug(logPrefix, "Processed DELETED data for consumer", consumerID, deletedKey)
+		for _, key := range deletedKeyEvent.Keys {
+			deletedKey, ok := authManager.deleteKey(key.Key)
+			if !ok {
+				l.Debug(logPrefix, "Key Deletion failed for consumer", consumerID, deletedKeyEvent)
+			} else {
+				l.Debug(logPrefix, "Processed DELETED data for consumer", consumerID, deletedKey)
+			}
 		}
 
 	default:
