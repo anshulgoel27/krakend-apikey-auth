@@ -81,9 +81,11 @@ func processMessage(data []byte, logPrefix string, consumerID string, l logging.
 		}
 		l.Debug(logPrefix, "Recieved CREATED data for consumer", consumerID, createdKeyData)
 
-		ok := authManager.addKey(&createdKeyData)
+		ok, err := authManager.addKey(&createdKeyData)
 		if !ok {
-			l.Debug(logPrefix, "Key CREATED failed for consumer", consumerID, createdKeyData, "Already Exists")
+			if err != nil {
+				l.Debug(logPrefix, "Key CREATED failed for consumer", consumerID, createdKeyData, err.Error())
+			}
 		} else {
 			l.Debug(logPrefix, "Processed CREATED data for consumer", consumerID, createdKeyData)
 		}

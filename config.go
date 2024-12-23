@@ -161,10 +161,10 @@ func (manager *AuthKeyLookupManager) deleteKey(key string) (ApiKey, bool) {
 	return ApiKey{}, false
 }
 
-func (manager *AuthKeyLookupManager) addKey(keyData *CreatedKeyData) bool {
+func (manager *AuthKeyLookupManager) addKey(keyData *CreatedKeyData) (bool, error) {
 
 	if keyData.Key == "" || keyData.Email == "" || keyData.UserID == "" {
-		return false
+		return false, fmt.Errorf("key %v has missing attributes", keyData)
 	}
 
 	newKey := ApiKey{
@@ -183,12 +183,12 @@ func (manager *AuthKeyLookupManager) addKey(keyData *CreatedKeyData) bool {
 
 	// Check if the key already exists
 	if _, exists := manager.lookupKeyMap[newKey.Key]; exists {
-		return false // Key already exists
+		return false, fmt.Errorf("key %v already exists", keyData) // Key already exists
 	}
 
 	// Add the new key to the map
 	manager.lookupKeyMap[newKey.Key] = newKey
-	return true
+	return true, nil
 }
 
 // Method to validate if the key and role are valid
