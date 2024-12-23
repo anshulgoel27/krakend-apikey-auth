@@ -16,7 +16,7 @@ import (
 const logPrefix = "[SERVICE: Gin][apikey-auth]"
 
 func NewApiKeyAuthenticator(ctx context.Context, cfg config.ServiceConfig, l logging.Logger) (*auth.AuthKeyLookupManager, error) {
-	detectorCfg, err := auth.ParseServiceConfig(ctx, cfg.ExtraConfig, l, logPrefix)
+	detectorCfg, err := auth.ParseServiceConfig(cfg.ExtraConfig)
 	if err == auth.ErrNoConfig {
 		return nil, err
 	}
@@ -24,7 +24,9 @@ func NewApiKeyAuthenticator(ctx context.Context, cfg config.ServiceConfig, l log
 		l.Warning(logPrefix, err.Error())
 		return nil, err
 	}
-	return auth.NewAuthKeyLookupManager(detectorCfg), nil
+	authManager := auth.NewAuthKeyLookupManager(detectorCfg)
+	go auth.StartConsumer(ctx, l, logPrefix, authManager)
+	return authManager, nil
 }
 
 func NewHandlerFactory(apiKeyLookupManager *auth.AuthKeyLookupManager, hf krakendgin.HandlerFactory, l logging.Logger) krakendgin.HandlerFactory {

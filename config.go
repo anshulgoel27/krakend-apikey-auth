@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,7 +9,6 @@ import (
 	"time"
 
 	"github.com/luraproject/lura/v2/config"
-	"github.com/luraproject/lura/v2/logging"
 )
 
 // Define enum for Strategy
@@ -150,6 +148,44 @@ func (manager *AuthKeyLookupManager) lookupKey(key string) (ApiKey, bool) {
 	return apiKey, found
 }
 
+// Lookup function to find an ApiKey by key
+func (manager *AuthKeyLookupManager) deleteKey(key string) (ApiKey, bool) {
+	manager.mu.Lock()
+	defer manager.mu.Unlock()
+
+	apiKey, exists := manager.lookupKeyMap[key]
+	if exists {
+		delete(manager.lookupKeyMap, key)
+		return apiKey, true
+	}
+	return ApiKey{}, false
+}
+
+func (manager *AuthKeyLookupManager) addKey(keyData *CreatedKeyData) bool {
+	newKey := ApiKey{
+		Key:            keyData.Key,
+		UserEmail:      keyData.Email,
+		UserId:         keyData.UserID,
+		ExpirationDate: keyData.ExpirationDate,
+		CreationDate:   keyData.CreationDate,
+		Enabled:        keyData.Enabled,
+		Roles: []string{
+			keyData.Plan,
+		},
+	}
+	manager.mu.Lock()
+	defer manager.mu.Unlock()
+
+	// Check if the key already exists
+	if _, exists := manager.lookupKeyMap[newKey.Key]; exists {
+		return false // Key already exists
+	}
+
+	// Add the new key to the map
+	manager.lookupKeyMap[newKey.Key] = newKey
+	return true
+}
+
 // Method to validate if the key and role are valid
 func (manager *AuthKeyLookupManager) ValidateKeyAndRole(key string, role string) (bool, error) {
 	// Lookup the ApiKey by the provided key
@@ -221,7 +257,7 @@ type EndpointApiKeyConfig struct {
 
 var ErrNoConfig = errors.New("no config defined for the module")
 
-func ParseServiceConfig(ctx context.Context, cfg config.ExtraConfig, l logging.Logger, logPrefix string) (ServiceApiKeyConfig, error) {
+func ParseServiceConfig(cfg config.ExtraConfig) (ServiceApiKeyConfig, error) {
 	res := ServiceApiKeyConfig{}
 	e, ok := cfg[Namespace]
 	if !ok {
@@ -262,7 +298,6 @@ func ParseServiceConfig(ctx context.Context, cfg config.ExtraConfig, l logging.L
 	}
 
 	// TODO: fetch all the keys from service API and build the cache
-	go startConsumer(ctx, l, logPrefix)
 	return res, err
 }
 
