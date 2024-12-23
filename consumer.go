@@ -125,7 +125,17 @@ func StartConsumer(ctx context.Context, l logging.Logger, logPrefix string, auth
 		l.Error(logPrefix, "Error NATS_APIKEY_MANAGE_TOPIC variable not defined")
 	}
 
-	nc, err := nats.Connect(url)
+	opts := []nats.Option{
+		nats.ReconnectWait(2 * time.Second), // Wait time between reconnect attempts
+		nats.MaxReconnects(10),              // Max number of reconnection attempts
+		nats.DisconnectErrHandler(func(nc *nats.Conn, err error) {
+			l.Info("Disconnected from NATS server!")
+		}),
+		nats.ReconnectHandler(func(nc *nats.Conn) {
+			l.Info("Reconnected to NATS server!")
+		}),
+	}
+	nc, err := nats.Connect(url, opts...)
 	if err != nil {
 		l.Error(logPrefix, "Error connecting to NATS", err)
 		return
