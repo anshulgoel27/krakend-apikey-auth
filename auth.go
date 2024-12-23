@@ -12,6 +12,8 @@ import (
 const (
 	AuthorizationBearer = "Bearer "
 	AuthorizationBasic  = "Basic "
+	UserIdHeader        = "X-User-Id"
+	UserEmailHeader     = "X-User-Email"
 )
 
 type AuthFunc func(apiKeyLookupManager *AuthKeyLookupManager, r *http.Request) (bool, error)
@@ -67,7 +69,7 @@ func (d *EndpointApiKeyConfig) Authenticate(apiKeyLookupManager *AuthKeyLookupMa
 	}
 
 	// Validate the API key and its roles
-	valid, propagate_role, err := apiKeyLookupManager.ValidateKeyAndRoles(sha256ToHex(apiKey), d.Roles)
+	valid, propagate_role, api_key, err := apiKeyLookupManager.ValidateKeyAndRoles(sha256ToHex(apiKey), d.Roles)
 	if err != nil {
 		return false, fmt.Errorf("authentication failed for API key: %v", err)
 	}
@@ -75,6 +77,9 @@ func (d *EndpointApiKeyConfig) Authenticate(apiKeyLookupManager *AuthKeyLookupMa
 	if apiKeyLookupManager.PropagateRoleHeader() != "" {
 		r.Header.Set(apiKeyLookupManager.PropagateRoleHeader(), propagate_role)
 	}
+
+	r.Header.Set(UserIdHeader, api_key.UserId)
+	r.Header.Set(UserEmailHeader, api_key.UserEmail)
 
 	// Return the result of validation
 	return valid, nil

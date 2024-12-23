@@ -219,33 +219,33 @@ func (manager *AuthKeyLookupManager) ValidateKeyAndRole(key string, role string)
 }
 
 // Method to validate if the key and any role from the list are valid
-func (manager *AuthKeyLookupManager) ValidateKeyAndRoles(key string, roles []string) (bool, string, error) {
+func (manager *AuthKeyLookupManager) ValidateKeyAndRoles(key string, roles []string) (bool, string, ApiKey, error) {
 	// Lookup the ApiKey by the provided key
 	apiKey, found := manager.lookupKey(key)
 	if !found {
-		return false, "", errors.New("API key not found")
+		return false, "", ApiKey{}, errors.New("API key not found")
 	}
 
 	// Check if the API key is enabled or not
 	if !apiKey.Enabled {
-		return false, "", fmt.Errorf("API key '%s' is disabled", key)
+		return false, "", ApiKey{}, fmt.Errorf("API key '%s' is disabled", key)
 	}
 
 	// Check if the API key is expired
 	if apiKey.isExpired() {
-		return false, "", fmt.Errorf("API key '%s' has expired", key)
+		return false, "", ApiKey{}, fmt.Errorf("API key '%s' has expired", key)
 	}
 
 	// Iterate through the list of roles and check if any of them are found in the RoleMap
 	for _, role := range roles {
 		if apiKey.hasRole(role) {
 			// Role found
-			return true, role, nil
+			return true, role, apiKey, nil
 		}
 	}
 
 	// No valid role found
-	return false, "", fmt.Errorf("none of the roles %v found for API key '%s'", roles, key)
+	return false, "", ApiKey{}, fmt.Errorf("none of the roles %v found for API key '%s'", roles, key)
 }
 
 type EndpointApiKeyConfig struct {
