@@ -35,6 +35,7 @@ type ApiKey struct {
 	CreationDate    time.Time              `json:"creation_date"`   // Creation date for API key
 	UserId          string                 `json:"user_id"`
 	UserEmail       string                 `json:"user_email"`
+	Enabled         bool                   `json:"enabled"`
 	RoleMap         map[string]struct{}    `json:"-"` // RoleMap for fast lookup
 	AdditionalProps map[string]interface{} `json:"-"`
 }
@@ -147,12 +148,60 @@ func (manager *AuthKeyLookupManager) lookupKey(key string) (ApiKey, bool) {
 	return apiKey, found
 }
 
+// Lookup function to find an ApiKey by key
+func (manager *AuthKeyLookupManager) deleteKey(key string) (ApiKey, bool) {
+	manager.mu.Lock()
+	defer manager.mu.Unlock()
+
+	apiKey, exists := manager.lookupKeyMap[key]
+	if exists {
+		delete(manager.lookupKeyMap, key)
+		return apiKey, true
+	}
+	return ApiKey{}, false
+}
+
+func (manager *AuthKeyLookupManager) addKey(keyData *CreatedKeyData) bool {
+
+	if keyData.Key == "" || keyData.Email == "" || keyData.UserID == "" {
+		return false
+	}
+
+	newKey := ApiKey{
+		Key:            keyData.Key,
+		UserEmail:      keyData.Email,
+		UserId:         keyData.UserID,
+		ExpirationDate: keyData.ExpirationDate,
+		CreationDate:   keyData.CreationDate,
+		Enabled:        keyData.Enabled,
+		Roles: []string{
+			keyData.Plan,
+		},
+	}
+	manager.mu.Lock()
+	defer manager.mu.Unlock()
+
+	// Check if the key already exists
+	if _, exists := manager.lookupKeyMap[newKey.Key]; exists {
+		return false // Key already exists
+	}
+
+	// Add the new key to the map
+	manager.lookupKeyMap[newKey.Key] = newKey
+	return true
+}
+
 // Method to validate if the key and role are valid
 func (manager *AuthKeyLookupManager) ValidateKeyAndRole(key string, role string) (bool, error) {
 	// Lookup the ApiKey by the provided key
 	apiKey, found := manager.lookupKey(key)
 	if !found {
 		return false, errors.New("API key not found")
+	}
+
+	// Check if the API key is enabled or not
+	if !apiKey.Enabled {
+		return false, fmt.Errorf("API key '%s' is disabled", key)
 	}
 
 	// Check if the API key is expired
@@ -175,6 +224,11 @@ func (manager *AuthKeyLookupManager) ValidateKeyAndRoles(key string, roles []str
 	apiKey, found := manager.lookupKey(key)
 	if !found {
 		return false, "", errors.New("API key not found")
+	}
+
+	// Check if the API key is enabled or not
+	if !apiKey.Enabled {
+		return false, "", fmt.Errorf("API key '%s' is disabled", key)
 	}
 
 	// Check if the API key is expired
@@ -243,10 +297,12 @@ func ParseServiceConfig(cfg config.ExtraConfig) (ServiceApiKeyConfig, error) {
 				CreationDate: time.Now(),
 				UserId:       "admin",
 				UserEmail:    "admin",
+				Enabled:      true,
 			})
 		}
 	}
 
+	// TODO: fetch all the keys from service API and build the cache
 	return res, err
 }
 

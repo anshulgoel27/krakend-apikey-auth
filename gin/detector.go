@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -14,7 +15,7 @@ import (
 
 const logPrefix = "[SERVICE: Gin][apikey-auth]"
 
-func NewApiKeyAuthenticator(cfg config.ServiceConfig, l logging.Logger) (*auth.AuthKeyLookupManager, error) {
+func NewApiKeyAuthenticator(ctx context.Context, cfg config.ServiceConfig, l logging.Logger) (*auth.AuthKeyLookupManager, error) {
 	detectorCfg, err := auth.ParseServiceConfig(cfg.ExtraConfig)
 	if err == auth.ErrNoConfig {
 		return nil, err
@@ -23,7 +24,9 @@ func NewApiKeyAuthenticator(cfg config.ServiceConfig, l logging.Logger) (*auth.A
 		l.Warning(logPrefix, err.Error())
 		return nil, err
 	}
-	return auth.NewAuthKeyLookupManager(detectorCfg), nil
+	authManager := auth.NewAuthKeyLookupManager(detectorCfg)
+	go auth.StartConsumer(ctx, l, logPrefix, authManager)
+	return authManager, nil
 }
 
 func NewHandlerFactory(apiKeyLookupManager *auth.AuthKeyLookupManager, hf krakendgin.HandlerFactory, l logging.Logger) krakendgin.HandlerFactory {
@@ -53,7 +56,7 @@ func handler(f auth.AuthFunc, apiKeyLookupManager *auth.AuthKeyLookupManager, ne
 				l.Error(logPrefix, err)
 			}
 			l.Error(logPrefix, errApiKeyAuthRejected)
-			c.AbortWithStatus(http.StatusForbidden)
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
