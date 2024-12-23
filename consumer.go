@@ -92,10 +92,10 @@ func processMessage(data []byte, logPrefix string, consumerID string, l logging.
 			ok, err := authManager.addKey(&key)
 			if !ok {
 				if err != nil {
-					l.Debug(logPrefix, "Key CREATED failed for consumer", consumerID, createdKeyEvent, err.Error())
+					l.Debug(logPrefix, "Key CREATED failed for consumer", consumerID, key, err.Error())
 				}
 			} else {
-				l.Debug(logPrefix, "Processed CREATED data for consumer", consumerID, createdKeyEvent)
+				l.Debug(logPrefix, "Processed CREATED data for consumer", consumerID, key)
 			}
 		}
 	case Deleted:
@@ -110,7 +110,7 @@ func processMessage(data []byte, logPrefix string, consumerID string, l logging.
 		for _, key := range deletedKeyEvent.Keys {
 			deletedKey, ok := authManager.deleteKey(key.Key)
 			if !ok {
-				l.Debug(logPrefix, "Key Deletion failed for consumer", consumerID, deletedKeyEvent)
+				l.Debug(logPrefix, "Key Deletion failed for consumer", consumerID, key)
 			} else {
 				l.Debug(logPrefix, "Processed DELETED data for consumer", consumerID, deletedKey)
 			}
