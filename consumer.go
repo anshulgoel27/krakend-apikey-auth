@@ -79,13 +79,14 @@ func processMessage(data []byte, logPrefix string, consumerID string, l logging.
 			l.Error(logPrefix, "Error parsing CREATED data:", err)
 			return false
 		}
-		l.Info(logPrefix, "Recieved CREATED data for consumer", consumerID, createdKeyData)
+		l.Debug(logPrefix, "Recieved CREATED data for consumer", consumerID, createdKeyData)
 
 		ok := authManager.addKey(&createdKeyData)
 		if !ok {
-			l.Info(logPrefix, "Key CREATED failed for consumer", consumerID, createdKeyData, "Already Exists")
+			l.Debug(logPrefix, "Key CREATED failed for consumer", consumerID, createdKeyData, "Already Exists")
+		} else {
+			l.Debug(logPrefix, "Processed CREATED data for consumer", consumerID, createdKeyData)
 		}
-		l.Info(logPrefix, "Processed CREATED data for consumer", consumerID, createdKeyData)
 	case Deleted:
 		var deletedKeyData DeletedKeyData
 		err := mapToStruct(keyAdminMsg.Data, &deletedKeyData)
@@ -93,13 +94,15 @@ func processMessage(data []byte, logPrefix string, consumerID string, l logging.
 			l.Error(logPrefix, "Error parsing DELETED data:", err)
 			return false
 		}
-		l.Info(logPrefix, "Recieved DELETED data for consumer", consumerID, deletedKeyData)
+		l.Debug(logPrefix, "Recieved DELETED data for consumer", consumerID, deletedKeyData)
 
 		deletedKey, ok := authManager.deleteKey(deletedKeyData.Key)
 		if !ok {
-			l.Info(logPrefix, "Key Deletion failed for consumer", consumerID, deletedKeyData)
+			l.Debug(logPrefix, "Key Deletion failed for consumer", consumerID, deletedKeyData)
+		} else {
+			l.Debug(logPrefix, "Processed DELETED data for consumer", consumerID, deletedKey)
 		}
-		l.Info(logPrefix, "Processed DELETED data for consumer", consumerID, deletedKey)
+
 	default:
 		l.Error(logPrefix, "Unsupported message type:", keyAdminMsg.Type)
 		return false
@@ -153,5 +156,5 @@ func StartConsumer(ctx context.Context, l logging.Logger, logPrefix string, auth
 	sub.Unsubscribe()
 	l.Debug(logPrefix, "Unsubscribed consumer", consumerID)
 	nc.Close()
-	l.Debug(logPrefix, "Closed NATS connection")
+	l.Debug(logPrefix, "Closed NATS connection for consumer", consumerID)
 }

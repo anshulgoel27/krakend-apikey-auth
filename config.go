@@ -162,6 +162,11 @@ func (manager *AuthKeyLookupManager) deleteKey(key string) (ApiKey, bool) {
 }
 
 func (manager *AuthKeyLookupManager) addKey(keyData *CreatedKeyData) bool {
+
+	if keyData.Key == "" || keyData.Email == "" || keyData.UserID == "" {
+		return false
+	}
+
 	newKey := ApiKey{
 		Key:            keyData.Key,
 		UserEmail:      keyData.Email,

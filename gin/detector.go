@@ -56,7 +56,7 @@ func handler(f auth.AuthFunc, apiKeyLookupManager *auth.AuthKeyLookupManager, ne
 				l.Error(logPrefix, err)
 			}
 			l.Error(logPrefix, errApiKeyAuthRejected)
-			c.AbortWithStatus(http.StatusForbidden)
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
