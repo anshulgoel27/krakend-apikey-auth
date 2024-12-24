@@ -14,6 +14,8 @@ const (
 	AuthorizationBasic  = "Basic "
 	UserIdHeader        = "X-User-Id"
 	UserEmailHeader     = "X-User-Email"
+	OrgIdHeader         = "X-Ord-Id"
+	OrgNameHeader       = "X-Org-Name"
 )
 
 type AuthFunc func(apiKeyLookupManager *AuthKeyLookupManager, r *http.Request) (bool, error)
@@ -80,6 +82,8 @@ func (d *EndpointApiKeyConfig) Authenticate(apiKeyLookupManager *AuthKeyLookupMa
 
 	r.Header.Set(UserIdHeader, api_key.UserId)
 	r.Header.Set(UserEmailHeader, api_key.UserEmail)
+	r.Header.Set(OrgIdHeader, api_key.OrgID)
+	r.Header.Set(OrgNameHeader, api_key.OrgName)
 
 	// Return the result of validation
 	return valid, nil
