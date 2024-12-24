@@ -28,6 +28,8 @@ type KeyAdminMessage struct {
 // Data structure for CREATED messages
 type CreatedKeyData struct {
 	UserID         string    `json:"user_id"`
+	OrgID          string    `json:"org_id"`
+	OrgName        string    `json:"org_name"`
 	Key            string    `json:"key"`
 	Email          string    `json:"email"`
 	ExpirationDate time.Time `json:"expiration_date"`

@@ -35,6 +35,8 @@ type ApiKey struct {
 	CreationDate    time.Time              `json:"creation_date"`   // Creation date for API key
 	UserId          string                 `json:"user_id"`
 	UserEmail       string                 `json:"user_email"`
+	OrgID           string                 `json:"org_id"`
+	OrgName         string                 `json:"org_name"`
 	Enabled         bool                   `json:"enabled"`
 	RoleMap         map[string]struct{}    `json:"-"` // RoleMap for fast lookup
 	AdditionalProps map[string]interface{} `json:"-"`
@@ -174,6 +176,8 @@ func (manager *AuthKeyLookupManager) addKey(keyData *CreatedKeyData) (bool, erro
 		ExpirationDate: keyData.ExpirationDate,
 		CreationDate:   keyData.CreationDate,
 		Enabled:        keyData.Enabled,
+		OrgID:          keyData.OrgID,
+		OrgName:        keyData.OrgName,
 		Roles: []string{
 			keyData.Plan,
 		},
@@ -297,6 +301,8 @@ func ParseServiceConfig(cfg config.ExtraConfig) (ServiceApiKeyConfig, error) {
 				CreationDate: time.Now(),
 				UserId:       "admin",
 				UserEmail:    "admin",
+				OrgID:        "admin",
+				OrgName:      "admin",
 				Enabled:      true,
 			})
 		}
