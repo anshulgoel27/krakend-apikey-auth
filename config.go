@@ -308,7 +308,6 @@ func ParseServiceConfig(cfg config.ExtraConfig) (ServiceApiKeyConfig, error) {
 		}
 	}
 
-	// TODO: fetch all the keys from service API and build the cache
 	return res, err
 }
 

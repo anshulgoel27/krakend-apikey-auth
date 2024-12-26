@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"os"
 
 	auth "github.com/anshulgoel27/krakend-apikey-auth"
 	"github.com/gin-gonic/gin"
@@ -25,6 +26,8 @@ func NewApiKeyAuthenticator(ctx context.Context, cfg config.ServiceConfig, l log
 		return nil, err
 	}
 	authManager := auth.NewAuthKeyLookupManager(detectorCfg)
+	go auth.FetchAllKeys(os.Getenv("KEY_MGMT_SERVICE_HEALTH_ENDPOINT"),
+		os.Getenv("KEY_MGMT_SERVICE_KEYS_ENDPOINT"), l, logPrefix, authManager)
 	go auth.StartConsumer(ctx, l, logPrefix, authManager)
 	return authManager, nil
 }

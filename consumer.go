@@ -30,7 +30,7 @@ type CreatedKeyData struct {
 	UserID         string    `json:"user_id"`
 	OrgID          string    `json:"org_id"`
 	OrgName        string    `json:"org_name"`
-	Key            string    `json:"key"`
+	Key            string    `json:"hashed_key"`
 	Email          string    `json:"email"`
 	ExpirationDate time.Time `json:"expiration_date"`
 	CreationDate   time.Time `json:"creation_date"`
@@ -44,7 +44,7 @@ type CreatedEvent struct {
 
 // Data structure for DELETED messages
 type DeletedKeyData struct {
-	Key string `json:"key"`
+	Key string `json:"hashed_key"`
 }
 
 type DeleteEvent struct {
