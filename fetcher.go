@@ -45,6 +45,7 @@ func FetchAllKeys(health_endpoint string, keys_endpoint string, l logging.Logger
 							l.Debug(logPrefix, "Key created", key)
 						}
 					}
+					offset += 1000
 				}
 				return
 			}
