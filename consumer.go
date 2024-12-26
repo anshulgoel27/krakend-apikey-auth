@@ -21,7 +21,7 @@ const (
 )
 
 type KeyAdminMessage struct {
-	Type MessageType            `json:"type"`
+	Type MessageType            `json:"message_type"`
 	Data map[string]interface{} `json:"data"`
 }
 
@@ -119,7 +119,7 @@ func processMessage(data []byte, logPrefix string, consumerID string, l logging.
 		}
 
 	default:
-		l.Error(logPrefix, "Unsupported message type:", keyAdminMsg.Type)
+		l.Error(logPrefix, "Unsupported event type:", keyAdminMsg.Type)
 		return false
 	}
 
