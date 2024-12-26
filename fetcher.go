@@ -62,19 +62,19 @@ func fetchKeys(url string) (CreatedEvent, error) {
 
 	resp, err := client.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch keys: %w", err)
+		return CreatedEvent{}, fmt.Errorf("failed to fetch keys: %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Check for HTTP success
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch keys, status code: %d", resp.StatusCode)
+		return CreatedEvent{}, fmt.Errorf("failed to fetch keys, status code: %d", resp.StatusCode)
 	}
 
 	// Parse the response body
 	var keys CreatedEvent
 	if err := json.NewDecoder(resp.Body).Decode(&keys); err != nil {
-		return nil, fmt.Errorf("failed to decode keys response: %w", err)
+		return CreatedEvent{}, fmt.Errorf("failed to decode keys response: %w", err)
 	}
 
 	return keys, nil
