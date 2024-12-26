@@ -30,12 +30,12 @@ func FetchAllKeys(health_endpoint string, keys_endpoint string, l logging.Logger
 						return
 					}
 
-					if len(keys) == 0 {
+					if len(keys.Keys) == 0 {
 						l.Debug("fetchAllKeys", "No more keys to fetch, stopping pagination")
 						break
 					}
 
-					for _, key := range keys {
+					for _, key := range keys.Keys {
 						ok, err := authManager.addKey(&key)
 						if !ok {
 							if err != nil {
@@ -55,7 +55,7 @@ func FetchAllKeys(health_endpoint string, keys_endpoint string, l logging.Logger
 	}
 }
 
-func fetchKeys(url string) ([]CreatedKeyData, error) {
+func fetchKeys(url string) (CreatedEvent, error) {
 	client := &http.Client{
 		Timeout: 5 * time.Second, // Adjust the timeout as needed
 	}
@@ -72,7 +72,7 @@ func fetchKeys(url string) ([]CreatedKeyData, error) {
 	}
 
 	// Parse the response body
-	var keys []CreatedKeyData
+	var keys CreatedEvent
 	if err := json.NewDecoder(resp.Body).Decode(&keys); err != nil {
 		return nil, fmt.Errorf("failed to decode keys response: %w", err)
 	}
