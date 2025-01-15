@@ -150,7 +150,6 @@ func (manager *AuthKeyLookupManager) lookupKey(key string) (ApiKey, bool) {
 	return apiKey, found
 }
 
-// Lookup function to find an ApiKey by key
 func (manager *AuthKeyLookupManager) deleteKey(key string) (ApiKey, bool) {
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
@@ -158,6 +157,18 @@ func (manager *AuthKeyLookupManager) deleteKey(key string) (ApiKey, bool) {
 	apiKey, exists := manager.lookupKeyMap[key]
 	if exists {
 		delete(manager.lookupKeyMap, key)
+		return apiKey, true
+	}
+	return ApiKey{}, false
+}
+
+func (manager *AuthKeyLookupManager) enabledKey(key string, enable bool) (ApiKey, bool) {
+	manager.mu.Lock()
+	defer manager.mu.Unlock()
+
+	apiKey, exists := manager.lookupKeyMap[key]
+	if exists {
+		apiKey.Enabled = enable
 		return apiKey, true
 	}
 	return ApiKey{}, false
