@@ -14,7 +14,7 @@ const (
 	AuthorizationBasic  = "Basic "
 	UserIdHeader        = "X-User-Id"
 	UserEmailHeader     = "X-User-Email"
-	OrgIdHeader         = "X-Ord-Id"
+	OrgIdHeader         = "X-Org-Id"
 	OrgNameHeader       = "X-Org-Name"
 )
 
