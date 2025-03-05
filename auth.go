@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	AuthorizationHeader = "Authorization"
 	AuthorizationBearer = "Bearer "
 	AuthorizationBasic  = "Basic "
 	UserIdHeader        = "X-User-Id"
@@ -37,27 +38,27 @@ func (d *EndpointApiKeyConfig) Authenticate(apiKeyLookupManager *AuthKeyLookupMa
 	// Determine the strategy for extracting the API key
 	if d.Strategy == "" || d.Strategy == Header {
 		// Default behavior: Extract API key from the Authorization header (Bearer or Basic)
-		authHeader := r.Header.Get("Authorization")
-		if authHeader != "" {
-			if len(authHeader) > len(AuthorizationBearer) && authHeader[:len(AuthorizationBearer)] == AuthorizationBearer {
-				// Remove the "Bearer " prefix and take the rest as the API key
-				apiKey = authHeader[len(AuthorizationBearer):]
-			} else if len(authHeader) > len(AuthorizationBasic) && authHeader[:len(AuthorizationBasic)] == AuthorizationBasic {
-				// Remove the "Basic " prefix, decode the base64 part, and take the result as the API key
-				encoded := authHeader[len(AuthorizationBasic):]
-				decoded, err := base64.StdEncoding.DecodeString(encoded)
-				if err != nil {
-					return false, fmt.Errorf("invalid base64 encoding in Authorization header: %v", err)
-				}
-				// The base64 decoded value will be in the format "<api_key>:"
-				// So, strip the trailing colon
-				apiKey = strings.Split(string(decoded), ":")[0]
-			} else {
-				// No valid prefix, treat the whole header value as the API key
-				apiKey = authHeader
+		authHeaderValue := r.Header.Get(AuthorizationHeader)
+		if authHeaderValue == "" {
+			if d.Identifier != "" {
+				authHeaderValue = r.Header.Get(d.Identifier)
 			}
+			if authHeaderValue == "" {
+				return false, fmt.Errorf("authorization header missing")
+			}
+		}
+
+		if strings.HasPrefix(authHeaderValue, AuthorizationBearer) {
+			apiKey = strings.TrimPrefix(authHeaderValue, AuthorizationBearer)
+		} else if strings.HasPrefix(authHeaderValue, AuthorizationBasic) {
+			encoded := strings.TrimPrefix(authHeaderValue, AuthorizationBasic)
+			decoded, err := base64.StdEncoding.DecodeString(encoded)
+			if err != nil {
+				return false, fmt.Errorf("invalid base64 encoding: %v", err)
+			}
+			apiKey = strings.SplitN(string(decoded), ":", 2)[0]
 		} else {
-			return false, fmt.Errorf("authorization header missing")
+			apiKey = authHeaderValue
 		}
 	} else if d.Strategy == QueryString {
 		// Extract API key from query string
