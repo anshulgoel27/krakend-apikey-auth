@@ -39,17 +39,47 @@ func NewHandlerFactory(apiKeyLookupManager *auth.AuthKeyLookupManager, hf kraken
 		logPrefix := "[ENDPOINT: " + cfg.Endpoint + "][apikey-auth]"
 		detectorCfg, err := auth.ParseEndpointConfig(apiKeyLookupManager, cfg.ExtraConfig)
 		if err == auth.ErrNoConfig {
-			hf := ginjose.HandlerFactory(hf, l, rejecterF)
-			return hf(cfg, p)
+			jwtHF := ginjose.HandlerFactory(hf, l, rejecterF)
+			return jwtHF(cfg, p)
 		}
 		if err != nil {
 			l.Warning(logPrefix, err.Error())
-			hf := ginjose.HandlerFactory(hf, l, rejecterF)
-			return hf(cfg, p)
+			jwtHF := ginjose.HandlerFactory(hf, l, rejecterF)
+			return jwtHF(cfg, p)
 		}
 
 		d := auth.NewApiKeyAuthenticator(detectorCfg)
-		return handler(d, apiKeyLookupManager, hf(cfg, p), l)
+
+		nextApi := hf(cfg, p)
+
+		var nextJwt gin.HandlerFunc
+		_, hasJwtConfig := cfg.ExtraConfig[krakendjose.ValidatorNamespace]
+		if hasJwtConfig {
+			jwthf := ginjose.HandlerFactory(hf, l, rejecterF)
+			nextJwt = jwthf(cfg, p)
+		}
+
+		return func(c *gin.Context) {
+			valid, err := d(apiKeyLookupManager, c.Request)
+			if !valid {
+				if err != nil {
+					l.Error(logPrefix, err)
+				}
+				if hasJwtConfig && nextJwt != nil {
+					if nextJwt == nil {
+						l.Error(logPrefix, "JWT handler is nil despite config")
+						c.AbortWithStatus(http.StatusInternalServerError)
+						return
+					}
+					nextJwt(c)
+					return
+				}
+				l.Error(logPrefix, errApiKeyAuthRejected)
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			nextApi(c)
+		}
 	}
 }
 
