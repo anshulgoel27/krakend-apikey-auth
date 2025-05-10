@@ -63,7 +63,7 @@ func NewHandlerFactory(apiKeyLookupManager *auth.AuthKeyLookupManager, hf kraken
 			valid, err := d(apiKeyLookupManager, c.Request)
 			if !valid {
 				if err != nil {
-					l.Error(logPrefix, err)
+					l.Debug(logPrefix, err)
 				}
 				if hasJwtConfig && nextJwt != nil {
 					if nextJwt == nil {
