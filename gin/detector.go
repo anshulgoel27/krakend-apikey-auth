@@ -74,7 +74,7 @@ func NewHandlerFactory(apiKeyLookupManager *auth.AuthKeyLookupManager, hf kraken
 					nextJwt(c)
 					return
 				}
-				l.Error(logPrefix, errApiKeyAuthRejected)
+				l.Debug(logPrefix, errApiKeyAuthRejected)
 				c.AbortWithStatus(http.StatusUnauthorized)
 				return
 			}
