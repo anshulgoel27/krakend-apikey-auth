@@ -21,7 +21,7 @@ const (
 
 // Default values
 const defaultStrategy = Header
-const defaultIdentifier = "Authorization"
+const defaultIdentifier = "X-API-Key"
 const defaultPropagateRoleHeader = "X-API-Role"
 
 // Namespace is the key to look for extra configuration details
