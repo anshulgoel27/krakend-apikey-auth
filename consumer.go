@@ -37,6 +37,7 @@ type CreatedKeyData struct {
 	CreationDate   time.Time `json:"creation_date"`
 	Enabled        bool      `json:"enabled"`
 	Plan           string    `json:"plan"`
+	KeyLabel       string    `json:"key_label"`
 }
 
 type CreatedEvent struct {
