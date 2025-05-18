@@ -21,9 +21,9 @@ func FetchAllKeys(health_endpoint string, keys_endpoint string, l logging.Logger
 			} else {
 				l.Debug(logPrefix, "auth service is up")
 				//fetch keys
-				lastSeenId := 1000
+				offset := 0
 				for {
-					url := fmt.Sprintf("%s?lastSeenId=%d", keys_endpoint, lastSeenId)
+					url := fmt.Sprintf("%s?offset=%d", keys_endpoint, offset)
 					keys, err := fetchKeys(url)
 					if err != nil {
 						l.Error("fetchAllKeys", "failed to fetch keys", err)
@@ -45,7 +45,7 @@ func FetchAllKeys(health_endpoint string, keys_endpoint string, l logging.Logger
 							l.Debug(logPrefix, "Key created", key)
 						}
 					}
-					lastSeenId += len(keys.Keys)
+					offset += len(keys.Keys)
 				}
 				return
 			}
