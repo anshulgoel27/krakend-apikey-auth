@@ -162,13 +162,15 @@ func (manager *AuthKeyLookupManager) deleteKey(key string) (ApiKey, bool) {
 	return ApiKey{}, false
 }
 
-func (manager *AuthKeyLookupManager) enabledKey(key string, enable bool) (ApiKey, bool) {
+func (manager *AuthKeyLookupManager) updateKey(key string, enable bool, planName string) (ApiKey, bool) {
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
 
 	apiKey, exists := manager.lookupKeyMap[key]
 	if exists {
 		apiKey.Enabled = enable
+		apiKey.Roles = []string{planName}
+		apiKey.RoleMap = nil
 		return apiKey, true
 	}
 	return ApiKey{}, false

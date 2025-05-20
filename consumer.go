@@ -18,7 +18,7 @@ type MessageType string
 const (
 	Created MessageType = "CREATED"
 	Deleted MessageType = "DELETED"
-	Enabled MessageType = "ENABLED"
+	Updated MessageType = "UPDATED"
 )
 
 type KeyAdminMessage struct {
@@ -51,16 +51,6 @@ type DeletedKeyData struct {
 
 type DeleteEvent struct {
 	Keys []DeletedKeyData `json:"keys"`
-}
-
-// Data structure for DELETED messages
-type EnabledKeyData struct {
-	Key     string `json:"hashed_key"`
-	Enabled bool   `json:"enabled"`
-}
-
-type EnabledEvent struct {
-	Keys []EnabledKeyData `json:"keys"`
 }
 
 // Validate the Type field
@@ -129,21 +119,21 @@ func processMessage(data []byte, logPrefix string, consumerID string, l logging.
 				l.Debug(logPrefix, "Processed DELETED data for consumer", consumerID, deletedKey)
 			}
 		}
-	case Enabled:
-		var enabledKeyEvent EnabledEvent
+	case Updated:
+		var enabledKeyEvent CreatedEvent
 		err := mapToStruct(keyAdminMsg.Data, &enabledKeyEvent)
 		if err != nil {
 			l.Error(logPrefix, "Error parsing ENABLED data:", err)
 			return false
 		}
-		l.Debug(logPrefix, "Recieved ENABLED data for consumer", consumerID, enabledKeyEvent)
+		l.Debug(logPrefix, "Recieved UPDATED data for consumer", consumerID, enabledKeyEvent)
 
 		for _, key := range enabledKeyEvent.Keys {
-			deletedKey, ok := authManager.enabledKey(key.Key, key.Enabled)
+			deletedKey, ok := authManager.updateKey(key.Key, key.Enabled, key.Plan)
 			if !ok {
-				l.Debug(logPrefix, "Key Enable/Disable failed for consumer", consumerID, key)
+				l.Debug(logPrefix, "Key UPDATE failed for consumer", consumerID, key)
 			} else {
-				l.Debug(logPrefix, "Processed Enable/Disable data for consumer", consumerID, deletedKey)
+				l.Debug(logPrefix, "Processed UPDATE data for consumer", consumerID, deletedKey)
 			}
 		}
 
