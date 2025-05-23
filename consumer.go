@@ -32,7 +32,7 @@ type CreatedKeyData struct {
 	OrgID          string    `json:"org_id"`
 	OrgName        string    `json:"org_name"`
 	Key            string    `json:"hashed_key"`
-	Email          string    `json:"email"`
+	Email          string    `json:"org_email"`
 	ExpirationDate time.Time `json:"expiration_date"`
 	CreationDate   time.Time `json:"creation_date"`
 	Enabled        bool      `json:"enabled"`
