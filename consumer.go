@@ -36,7 +36,7 @@ type CreatedKeyData struct {
 	ExpirationDate time.Time `json:"expiration_date"`
 	CreationDate   time.Time `json:"creation_date"`
 	Enabled        bool      `json:"enabled"`
-	Plan           string    `json:"plan"`
+	Plan           string    `json:"plan_name"`
 	KeyLabel       string    `json:"key_label"`
 }
 
@@ -55,7 +55,7 @@ type DeleteEvent struct {
 
 // Validate the Type field
 func (mt MessageType) IsValid() bool {
-	return mt == Created || mt == Deleted
+	return mt == Created || mt == Deleted || mt == Updated
 }
 
 // Helper function to map generic map[string]interface{} to a specific struct
