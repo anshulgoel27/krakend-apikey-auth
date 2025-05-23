@@ -21,7 +21,7 @@ func FetchAllKeys(health_endpoint string, keys_endpoint string, l logging.Logger
 			} else {
 				l.Debug(logPrefix, "auth service is up")
 				//fetch keys
-				offset := 0
+				offset := 1
 				for {
 					url := fmt.Sprintf("%s?offset=%d", keys_endpoint, offset)
 					keys, err := fetchKeys(url)
